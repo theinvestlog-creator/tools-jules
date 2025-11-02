@@ -41,10 +41,13 @@ def _rows_to_csv_text(rows: List[Dict[str, str]]) -> str:
     if not rows:
         return ""
 
-    header = "date,close,div,split"
+    header = "date,open,high,low,close,adj_close,volume,div,split"
     lines = [header]
     for row in rows:
-        lines.append(f"{row['date']},{row['close']},{row['div']},{row['split']}")
+        lines.append(
+            f"{row['date']},{row['open']},{row['high']},{row['low']},{row['close']},"
+            f"{row['adj_close']},{row['volume']},{row['div']},{row['split']}"
+        )
 
     return "\n".join(lines)
 
