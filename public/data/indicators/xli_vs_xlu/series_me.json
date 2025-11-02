@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "slug": "xli_vs_xlu",
+    "title": "XLI / XLU",
+    "type": "price_ratio",
+    "tickers": [
+      "XLI",
+      "XLU"
+    ],
+    "lastUpdated": "2025-11-02"
+  },
+  "series": [
+    {
+      "date": "2023-01-03",
+      "ratio": 1.0
+    }
+  ]
+}

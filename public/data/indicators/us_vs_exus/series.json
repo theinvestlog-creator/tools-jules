@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "slug": "us_vs_exus",
+    "title": "SPY / ACWX",
+    "type": "price_ratio",
+    "tickers": [
+      "SPY",
+      "ACWX"
+    ],
+    "lastUpdated": "2025-11-02"
+  },
+  "series": [
+    {
+      "date": "2023-01-01",
+      "ratio": 1.0
+    },
+    {
+      "date": "2023-01-02",
+      "ratio": 1.0
+    },
+    {
+      "date": "2023-01-03",
+      "ratio": 1.0
+    }
+  ]
+}
