@@ -1,0 +1,65 @@
+name: Nightly Data Pipeline
+
+on:
+  schedule:
+    - cron: "0 * * * *" # Runs hourly
+  workflow_dispatch:
+
+concurrency: data-nightly
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Berlin Time
+        id: gate
+        run: |
+          # Only proceed if the hour in Berlin is 00, or if manually triggered
+          if [[ "$(TZ='Europe/Berlin' date +'%H')" == "00" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "run_now=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_now=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout repository
+        if: steps.gate.outputs.run_now == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        if: steps.gate.outputs.run_now == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        if: steps.gate.outputs.run_now == 'true'
+        run: pip install requests
+
+      - name: Run data pipeline
+        if: steps.gate.outputs.run_now == 'true'
+        env:
+          YAHOO_PROXY_URL: ${{ secrets.YAHOO_PROXY_URL }}
+          YAHOO_PROXY_TOKEN: ${{ secrets.YAHOO_PROXY_TOKEN }}
+        run: python -m backend.cli
+
+      - name: Commit and push changes
+        if: steps.gate.outputs.run_now == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Add all changes in the data directories
+          git add public/data/
+          git add data/
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git commit -m "chore(data): nightly data update"
+            git push
+            echo "Data changes committed and pushed."
+          else
+            echo "No data changes to commit."
+          fi
