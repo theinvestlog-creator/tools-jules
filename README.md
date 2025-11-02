@@ -55,10 +55,12 @@ To run the pipeline locally, you will need Python 3.12 and `requests`.
 
 -   **Path:** `data/store/tickers/<SYMBOL>.csv`
 -   **Format:** CSV
--   **Header:** `date,close,div,split`
+-   **Header:** `date,open,high,low,close,adj_close,volume,div,split`
 -   **Fields:**
     -   `date`: ISO format (`YYYY-MM-DD`)
-    -   `close`: Adjusted closing price (float)
+    -   `open`, `high`, `low`, `close`: Standard daily prices
+    -   `adj_close`: Adjusted closing price (accounts for dividends and splits)
+    -   `volume`: Trading volume
     -   `div`: Cash dividend on that date (if any)
     -   `split`: Stock split ratio on that date (if any)
 

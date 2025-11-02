@@ -72,9 +72,18 @@ def _parse_yahoo_response(response: Dict[str, Any]) -> List[Dict[str, str]]:
     if not timestamps:
         return []
 
-    adjclose_list = result.get("indicators", {}).get("adjclose", [{}])[0].get("adjclose", [])
-    if len(timestamps) != len(adjclose_list):
-        return []  # Data integrity issue
+    indicators = result.get("indicators", {})
+    quote = indicators.get("quote", [{}])[0]
+    adjclose_list = indicators.get("adjclose", [{}])[0].get("adjclose", [])
+
+    open_list = quote.get("open", [])
+    high_list = quote.get("high", [])
+    low_list = quote.get("low", [])
+    close_list = quote.get("close", [])
+    volume_list = quote.get("volume", [])
+
+    if not (len(timestamps) == len(adjclose_list) == len(open_list) == len(high_list) == len(low_list) == len(close_list) == len(volume_list)):
+        return [] # Data integrity issue
 
     events = result.get("events", {})
     dividends = {str(data['date']): data['amount'] for data in events.get("dividends", {}).values()}
@@ -82,13 +91,18 @@ def _parse_yahoo_response(response: Dict[str, Any]) -> List[Dict[str, str]]:
 
     rows = []
     for i, ts in enumerate(timestamps):
-        if adjclose_list[i] is None:
-            continue  # Skip entries with no price data
+        if adjclose_list[i] is None or close_list[i] is None:
+            continue
 
         ts_str = str(ts)
         rows.append({
             "date": datetime.fromtimestamp(ts).strftime("%Y-%m-%d"),
-            "close": f"{adjclose_list[i]:.6f}",
+            "open": f"{open_list[i]:.6f}" if open_list[i] is not None else "",
+            "high": f"{high_list[i]:.6f}" if high_list[i] is not None else "",
+            "low": f"{low_list[i]:.6f}" if low_list[i] is not None else "",
+            "close": f"{close_list[i]:.6f}" if close_list[i] is not None else "",
+            "adj_close": f"{adjclose_list[i]:.6f}" if adjclose_list[i] is not None else "",
+            "volume": str(volume_list[i]) if volume_list[i] is not None else "",
             "div": str(dividends.get(ts_str, "")),
             "split": splits.get(ts_str, ""),
         })
