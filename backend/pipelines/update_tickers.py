@@ -2,7 +2,7 @@ import json
 import os
 import random
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Set
 
 from backend.clients.yahoo_proxy import fetch_daily_bars
@@ -54,7 +54,7 @@ def run(max_failure_rate: float = 0.5, jitter_ms: tuple = (150, 450)):
         return
 
     failures = 0
-    now = datetime.now()
+    now_utc = datetime.now(timezone.utc)
 
     for ticker in all_tickers:
         log_data = {"ticker": ticker}
@@ -62,27 +62,27 @@ def run(max_failure_rate: float = 0.5, jitter_ms: tuple = (150, 450)):
             csv_path = os.path.join(DATA_STORE_TICKERS_DIR, f"{ticker}.csv")
             existing_rows = read_csv_rows(csv_path)
 
-            start_date = (
-                datetime.strptime(existing_rows[-1]["date"], "%Y-%m-%d")
-                if existing_rows
-                else datetime(DEFAULT_START_YEAR, 1, 1)
-            )
+            if existing_rows:
+                last_date_str = existing_rows[-1]["date"]
+                start_date_utc = datetime.strptime(last_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            else:
+                start_date_utc = datetime(DEFAULT_START_YEAR, 1, 1, tzinfo=timezone.utc)
 
             all_new_rows = []
 
             # Fetch data in chunks from the start date until today
-            current_start = start_date
-            while current_start < now:
-                end_date = current_start + timedelta(days=365 * CHUNK_YEARS)
-                if end_date > now:
-                    end_date = now
+            current_start_utc = start_date_utc
+            while current_start_utc < now_utc:
+                end_date_utc = current_start_utc + timedelta(days=365 * CHUNK_YEARS)
+                if end_date_utc > now_utc:
+                    end_date_utc = now_utc
 
                 time.sleep(random.uniform(jitter_ms[0] / 1000.0, jitter_ms[1] / 1000.0))
 
-                chunk_rows = fetch_daily_bars(ticker, current_start, end_date)
+                chunk_rows = fetch_daily_bars(ticker, current_start_utc, end_date_utc)
                 all_new_rows.extend(chunk_rows)
 
-                current_start = end_date + timedelta(days=1)
+                current_start_utc = end_date_utc + timedelta(days=1)
 
 
             if not all_new_rows:
